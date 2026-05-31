@@ -1,0 +1,19 @@
+[app]
+title = ChiffrementApp
+package.name = chiffrementapp
+package.domain = org.nicolas
+source.dir = .
+source.include_exts = py,png,jpg,kv,atlas
+version = 1.0
+requirements = python3,kivy==2.3.0,cryptography
+android.permissions = INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE
+android.api = 33
+android.minapi = 21
+android.ndk = 25b
+android.accept_sdk_license = True
+android.archs = arm64-v8a
+orientation = portrait
+fullscreen = 0
+android.allow_backup = True
+log_level = 2
+warn_on_root = 1
