@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
@@ -26,47 +26,38 @@ jobs:
           openjdk-17-jdk autoconf libtool pkg-config \
           zlib1g-dev libncurses5-dev libncursesw5-dev \
           libtinfo5 cmake libffi-dev libssl-dev \
-          build-essential ccache libltdl-dev \
-          libgdbm-dev libbz2-dev libreadline-dev \
-          libsqlite3-dev
+          build-essential ccache libltdl-dev
 
-    - name: Install Buildozer and dependencies
+    - name: Install Buildozer and Cython
       run: |
-        pip install --upgrade pip setuptools
-        pip install buildozer==1.5.0
-        pip install cython==0.29.37
+        pip install --upgrade pip
+        pip install buildozer==1.5.0 cython==3.0.11
 
-    - name: Cache Buildozer
-      uses: actions/cache@v3
+    - name: Cache Buildozer global directory
+      uses: actions/cache@v4
       with:
-        path: |
-          ~/.buildozer
-          ~/.gradle
-        key: buildozer-${{ hashFiles('buildozer.spec') }}-v2
-        restore-keys: |
-          buildozer-
+        path: ~/.buildozer
+        key: buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: buildozer-
 
     - name: Build APK
       run: |
-        yes | buildozer android debug 2>&1
-      timeout-minutes: 60
-
-    - name: Find APK
-      run: |
-        echo "=== Contenu du dossier bin ==="
-        ls -la bin/ || echo "Dossier bin introuvable"
-        echo "=== Recherche APK partout ==="
-        find . -name "*.apk" 2>/dev/null || echo "Aucun APK trouve"
-        echo "=== Logs buildozer ==="
-        tail -50 .buildozer/logs/last_build.log 2>/dev/null || echo "Pas de log"
+        buildozer android debug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
       if: always()
+      uses: actions/upload-artifact@v4
       with:
         name: ChiffrementApp-debug
-        path: |
-          bin/*.apk
-          .buildozer/logs/
-        retention-days: 30
+        path: bin/*.apk
         if-no-files-found: warn
+        retention-days: 30
+
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: buildozer-logs
+        path: .buildozer/android/platform/build-*/logs/
+        if-no-files-found: ignore
+        retention-days: 7
