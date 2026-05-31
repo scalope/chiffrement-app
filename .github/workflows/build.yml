@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - name: Checkout code
@@ -40,26 +42,34 @@ jobs:
         key: buildozer-${{ hashFiles('buildozer.spec') }}
         restore-keys: buildozer-
 
-    - name: Build APK and capture error
+    - name: Build APK
       run: |
         buildozer android debug 2>&1 | tee build.log || true
-        echo "=== DERNIÈRES LIGNES ==="
-        tail -50 build.log
-        echo "=== LIGNES ERREUR ==="
-        grep -i "error\|exception\|failed\|traceback" build.log | tail -30 || true
-        # Vérifier si APK créé
-        ls bin/*.apk 2>/dev/null && echo "APK CRÉÉ OK" || echo "APK NON CRÉÉ"
+
+    - name: Trouver APK
+      if: always()
+      run: |
+        echo "=== Chercher APK partout ==="
+        find . -name "*.apk" 2>/dev/null
+        echo "=== Contenu bin/ ==="
+        ls -la bin/ 2>/dev/null || echo "Pas de dossier bin/"
+        echo "=== 30 dernieres lignes ==="
+        tail -30 build.log 2>/dev/null || true
+        echo "=== Erreurs ==="
+        grep -i "error\|exception\|failed" build.log 2>/dev/null | grep -v DEBUG | tail -20 || true
 
     - name: Upload APK
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ChiffrementApp-debug
-        path: bin/*.apk
+        name: APK
+        path: |
+          bin/*.apk
+          **/*.apk
         if-no-files-found: warn
         retention-days: 30
 
-    - name: Upload log complet
+    - name: Upload log
       if: always()
       uses: actions/upload-artifact@v4
       with:
